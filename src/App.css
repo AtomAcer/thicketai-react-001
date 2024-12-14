@@ -1,0 +1,77 @@
+/* General layout */
+.app-container {
+  display: flex;
+  height: 100vh;
+  background-color: #f9f9f9;
+  /* Light grey background */
+  color: #333;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 60px;
+  background-color: #506d9a;
+  /* Soft blue */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 10px;
+}
+
+.sidebar-icon {
+  margin: 20px 0;
+  font-size: 24px;
+  cursor: pointer;
+  color: white;
+}
+
+.sidebar-icon:hover {
+  opacity: 0.8;
+}
+
+/* Main Content */
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: white;
+  border-bottom: 1px solid #ddd;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.dropdown {
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: white;
+  font-size: 1rem;
+}
+
+/* Chat Area */
+.chat-area {
+  flex-grow: 1;
+  padding: 20px;
+  background-color: #f4f4f4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  color: #666;
+}
