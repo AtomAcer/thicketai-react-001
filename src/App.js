@@ -17,6 +17,17 @@ function App() {
     { id: 3, name: "Alex Brown", summary: "Answered questions about app usage and features." },
   ]);
 
+  const generateVoiceOutput = useCallback(async (text) => {
+    try {
+      const response = await axios.post("http://localhost:5001/api/generate-speech", { text, voice: voiceKey });
+      const audioBlob = new Blob([response.data], { type: 'audio/wav' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      new Audio(audioUrl).play();
+    } catch (error) {
+      console.error("Error generating speech:", error);
+    }
+  }, [voiceKey]);
+
   // Dummy usage for unused variables
   React.useEffect(() => {
     if (fileInput) {
@@ -36,7 +47,7 @@ function App() {
 
     // Dummy use for 'formatPrompt'
     console.log('Dummy use of formatPrompt:', typeof formatPrompt);
-  }, [fileInput, setHistoricalConversations]);
+  }, [fileInput, setHistoricalConversations, generateVoiceOutput]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -122,16 +133,6 @@ function App() {
   //     console.error("Error generating speech:", error);
   //   }
   // };
-  const generateVoiceOutput = useCallback(async (text) => {
-    try {
-      const response = await axios.post("http://localhost:5001/api/generate-speech", { text, voice: voiceKey });
-      const audioBlob = new Blob([response.data], { type: 'audio/wav' });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      new Audio(audioUrl).play();
-    } catch (error) {
-      console.error("Error generating speech:", error);
-    }
-  }, [voiceKey]);
 
   const formatPrompt = (history, input) => {
     let prompt = "You are a helpful assistant.\n";
