@@ -19,18 +19,6 @@ function App() {
 
   const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
 
-  // Dummy usage for unused variables
-  React.useEffect(() => {
-    if (fileInput) {
-      console.log('File input used:', fileInput.name); // Example usage
-    }
-
-    setHistoricalConversations((prev) => {
-      console.log('Historical conversations dummy usage:', prev.length);
-      return prev;
-    });
-  }, [fileInput, setHistoricalConversations]);
-
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -87,6 +75,19 @@ function App() {
       console.error("Error processing document:", error);
     }
   };
+
+  // const handleAudioStop = async (recordedBlob) => {
+  //   const formData = new FormData();
+  //   formData.append('file', recordedBlob);
+
+  //   try {
+  //     const response = await axios.post("http://localhost:5001/api/transcribe-audio", formData);
+  //     const transcript = response.data.transcript; // Get transcription
+  //     setTextInput(transcript); // Update textInput with the transcription
+  //   } catch (error) {
+  //     console.error("Error transcribing audio:", error);
+  //   }
+  // };
 
   const handleResponse = (answer) => {
     const botMessage = { role: 'Bot', text: answer, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
