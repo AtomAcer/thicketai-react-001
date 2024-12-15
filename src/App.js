@@ -5,18 +5,18 @@ import './styles.css';
 
 function App() {
   const [textInput, setTextInput] = useState('');
-  const [fileInput, setFileInput] = useState(null);
+  // const [fileInput, setFileInput] = useState(null);
   const [selectedDeposition, setSelectedDeposition] = useState('');
   const [conversationHistory, setConversationHistory] = useState([]);
   const [voiceKey, setVoiceKey] = useState('Adam');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showOverlay, setShowOverlay] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
-  const [historicalConversations, setHistoricalConversations] = useState([
-    { id: 1, name: "John Doe", summary: "Discussed project scope and responsibilities." },
-    { id: 2, name: "Jane Smith", summary: "Recapped client feedback and contract terms." },
-    { id: 3, name: "Alex Brown", summary: "Answered questions about app usage and features." },
-  ]);
+  // const [historicalConversations, setHistoricalConversations] = useState([
+  //   { id: 1, name: "John Doe", summary: "Discussed project scope and responsibilities." },
+  //   { id: 2, name: "Jane Smith", summary: "Recapped client feedback and contract terms." },
+  //   { id: 3, name: "Alex Brown", summary: "Answered questions about app usage and features." },
+  // ]);
 
   const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
 
@@ -77,18 +77,18 @@ function App() {
     }
   };
 
-  const handleAudioStop = async (recordedBlob) => {
-    const formData = new FormData();
-    formData.append('file', recordedBlob);
+  // const handleAudioStop = async (recordedBlob) => {
+  //   const formData = new FormData();
+  //   formData.append('file', recordedBlob);
 
-    try {
-      const response = await axios.post("http://localhost:5001/api/transcribe-audio", formData);
-      const transcript = response.data.transcript; // Get transcription
-      setTextInput(transcript); // Update textInput with the transcription
-    } catch (error) {
-      console.error("Error transcribing audio:", error);
-    }
-  };
+  //   try {
+  //     const response = await axios.post("http://localhost:5001/api/transcribe-audio", formData);
+  //     const transcript = response.data.transcript; // Get transcription
+  //     setTextInput(transcript); // Update textInput with the transcription
+  //   } catch (error) {
+  //     console.error("Error transcribing audio:", error);
+  //   }
+  // };
 
   const handleResponse = (answer) => {
     const botMessage = { role: 'Bot', text: answer, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
