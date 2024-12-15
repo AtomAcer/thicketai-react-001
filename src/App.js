@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import Recorder from 'react-mp3-recorder';
+// import Recorder from 'react-mp3-recorder';
 import './styles.css';
 
 function App() {
