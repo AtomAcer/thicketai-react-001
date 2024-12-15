@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import Recorder from 'react-mp3-recorder';
+// import Recorder from 'react-mp3-recorder';
 import './styles.css';
 
 function App() {
@@ -222,10 +222,9 @@ function App() {
                   {isRecording ? 'Stop' : 'Start'} Recording
                 </button>
                 {isRecording && (
-                  <Recorder
-                    onRecordingComplete={(blob) => handleAudioStop(blob)}
-                    onNotAllowed={(err) => console.error('Permission denied', err)}
-                  />
+                  <div className="recording-placeholder">
+                    Recording functionality is temporarily disabled.
+                  </div>
                 )}
               </div>
             </div>
