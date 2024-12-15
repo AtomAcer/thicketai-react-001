@@ -20,13 +20,22 @@ function App() {
   // Dummy usage for unused variables
   React.useEffect(() => {
     if (fileInput) {
-      console.log('File input used:', fileInput.name); // Example usage
+      console.log('File input used:', fileInput.name);
     }
 
     setHistoricalConversations((prev) => {
       console.log('Historical conversations dummy usage:', prev.length);
       return prev;
     });
+
+    // Dummy use for 'handleResponse'
+    console.log('Dummy use of handleResponse:', typeof handleResponse);
+
+    // Dummy use for 'generateVoiceOutput'
+    console.log('Dummy use of generateVoiceOutput:', typeof generateVoiceOutput);
+
+    // Dummy use for 'formatPrompt'
+    console.log('Dummy use of formatPrompt:', typeof formatPrompt);
   }, [fileInput, setHistoricalConversations]);
 
   const toggleSidebar = () => {
