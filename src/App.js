@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import axios from 'axios';
 import './styles.css';
 
@@ -32,7 +32,7 @@ function App() {
     console.log('Dummy use of handleResponse:', typeof handleResponse);
 
     // Dummy use for 'generateVoiceOutput'
-    console.log('Dummy use of generateVoiceOutput:', typeof generateVoiceOutput);
+    console.log('Using generateVoiceOutput in useEffect:', typeof generateVoiceOutput);
 
     // Dummy use for 'formatPrompt'
     console.log('Dummy use of formatPrompt:', typeof formatPrompt);
@@ -112,7 +112,17 @@ function App() {
     setConversationHistory(prev => [...prev, botMessage]);
   };
 
-  const generateVoiceOutput = async (text) => {
+  // const generateVoiceOutput = async (text) => {
+  //   try {
+  //     const response = await axios.post("http://localhost:5001/api/generate-speech", { text, voice: voiceKey });
+  //     const audioBlob = new Blob([response.data], { type: 'audio/wav' });
+  //     const audioUrl = URL.createObjectURL(audioBlob);
+  //     new Audio(audioUrl).play();
+  //   } catch (error) {
+  //     console.error("Error generating speech:", error);
+  //   }
+  // };
+  const generateVoiceOutput = useCallback(async (text) => {
     try {
       const response = await axios.post("http://localhost:5001/api/generate-speech", { text, voice: voiceKey });
       const audioBlob = new Blob([response.data], { type: 'audio/wav' });
@@ -121,7 +131,7 @@ function App() {
     } catch (error) {
       console.error("Error generating speech:", error);
     }
-  };
+  }, [voiceKey]);
 
   const formatPrompt = (history, input) => {
     let prompt = "You are a helpful assistant.\n";
