@@ -17,8 +17,6 @@ function App() {
     { id: 3, name: "Alex Brown", summary: "Answered questions about app usage and features." },
   ]);
 
-  const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
-
   // Dummy usage for unused variables
   React.useEffect(() => {
     if (fileInput) {
@@ -42,34 +40,46 @@ function App() {
   const handleTextSubmit = async () => {
     if (!textInput.trim()) return;
 
-    const newMessage = { role: 'You', text: textInput, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-    setConversationHistory([...conversationHistory, newMessage]);
+    const userMessage = { role: 'user', text: textInput, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    const updatedHistory = [...conversationHistory, userMessage];
+
+    setConversationHistory(updatedHistory);
     setTextInput('');
 
     try {
+      const azureEndpoint = process.env.REACT_APP_AZURE_OPENAI_ENDPOINT;
+      const azureApiKey = process.env.REACT_APP_AZURE_OPENAI_KEY;
+
+      const payload = {
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant.' },
+          ...updatedHistory.map(msg => ({ role: msg.role.toLowerCase(), content: msg.text })),
+        ],
+        max_tokens: 5000,
+        temperature: 0.5,
+      };
+
+      console.log('Payload:', payload); // Debugging the payload
+
       const response = await axios.post(
-        'https://api.openai.com/v1/completions',
-        {
-          model: "gpt-4",
-          prompt: formatPrompt(conversationHistory, textInput),
-          max_tokens: 150,
-          temperature: 0.5,
-        },
+        `${azureEndpoint}/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-08-01-preview`,
+        payload,
         {
           headers: {
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            'api-key': azureApiKey,
             'Content-Type': 'application/json',
-          }
+          },
         }
       );
 
-      const answer = response.data.choices[0].text.trim();
-      handleResponse(answer);
-      generateVoiceOutput(answer);
+      const answer = response.data.choices[0]?.message?.content.trim() || 'No response received.';
+      setConversationHistory(prev => [...prev, { role: 'assistant', text: answer }]);
     } catch (error) {
-      console.error("Error fetching OpenAI response:", error);
+      console.error("Error:", error.response?.data || error.message);
     }
   };
+
+
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
