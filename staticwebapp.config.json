@@ -1,15 +1,3 @@
 {
-    "routes": [
-        {
-            "route": "/*",
-            "allowedRoles": [
-                "anonymous"
-            ]
-        }
-    ],
-    "responseOverrides": {
-        "404": {
-            "rewrite": "/index.html"
-        }
-    }
+    "api_location": "api/src/functions"
 }
