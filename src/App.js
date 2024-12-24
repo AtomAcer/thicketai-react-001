@@ -60,15 +60,24 @@ function App() {
   const handleTextSubmit = async () => {
     if (!textInput.trim()) return;
 
-    const userMessage = { role: 'user', text: textInput, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    const userMessage = {
+      role: 'user',
+      text: textInput,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
     const updatedHistory = [...conversationHistory, userMessage];
 
     setConversationHistory(updatedHistory);
     setTextInput('');
 
     try {
-      const azureEndpoint = process.env.REACT_APP_AZURE_OPENAI_ENDPOINT;
-      const azureApiKey = process.env.REACT_APP_AZURE_OPENAI_KEY;
+      // Explicitly reference the environment variables (use a fallback if needed)
+      const azureEndpoint = `${process.env.REACT_APP_AZURE_OPENAI_ENDPOINT}`;
+      const azureApiKey = `${process.env.REACT_APP_AZURE_OPENAI_KEY}`;
+
+      if (!azureEndpoint || !azureApiKey) {
+        throw new Error("Missing environment variables: Ensure REACT_APP_AZURE_OPENAI_ENDPOINT and REACT_APP_AZURE_OPENAI_KEY are set.");
+      }
 
       const payload = {
         messages: [
@@ -96,8 +105,13 @@ function App() {
       setConversationHistory(prev => [...prev, { role: 'assistant', text: answer }]);
     } catch (error) {
       console.error("Error:", error.response?.data || error.message);
+      setConversationHistory(prev => [
+        ...prev,
+        { role: 'assistant', text: 'An error occurred while processing your request. Please try again.' },
+      ]);
     }
   };
+
 
 
 
