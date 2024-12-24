@@ -71,12 +71,12 @@ function App() {
     setTextInput('');
 
     try {
-      // Explicitly reference the environment variables (use a fallback if needed)
-      const azureEndpoint = `${process.env.REACT_APP_AZURE_OPENAI_ENDPOINT}`;
-      const azureApiKey = `${process.env.REACT_APP_AZURE_OPENAI_KEY}`;
+      // Fetch the API key and endpoint from the Azure Function
+      const configResponse = await axios.get('/api/GetOpenaiConfig'); // Ensure this matches your function URL
+      const { apiKey: azureApiKey, endpoint: azureEndpoint } = configResponse.data;
 
       if (!azureEndpoint || !azureApiKey) {
-        throw new Error("Missing environment variables: Ensure REACT_APP_AZURE_OPENAI_ENDPOINT and REACT_APP_AZURE_OPENAI_KEY are set.");
+        throw new Error("Failed to retrieve keys: Ensure the Azure Function is returning the correct data.");
       }
 
       const payload = {
@@ -90,6 +90,7 @@ function App() {
 
       console.log('Payload:', payload); // Debugging the payload
 
+      // Make the OpenAI API call using the retrieved keys
       const response = await axios.post(
         `${azureEndpoint}/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-08-01-preview`,
         payload,
@@ -111,6 +112,7 @@ function App() {
       ]);
     }
   };
+
 
 
 
