@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@azure/functions": "^4.0.0",
+    "@azure/storage-blob": "^12.26.0",
     "axios": "^1.7.9"
   },
   "main": "src/{index.js,functions/*.js}"

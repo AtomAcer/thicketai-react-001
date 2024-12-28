@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { BlobServiceClient } from '@azure/storage-blob';
 import axios from 'axios';
 import './styles.css';
 
@@ -57,6 +58,15 @@ function App() {
     setIsRecording(!isRecording);
   };
 
+  const handleKeyEnter = (event) => {
+    if (event.key === 'Enter') {
+      // Call your function here
+      console.log('Enter key pressed!');
+      // Example: Submit a form
+      handleTextSubmit();
+    }
+  };
+
   const handleTextSubmit = async () => {
     if (!textInput.trim()) return;
 
@@ -113,24 +123,53 @@ function App() {
     }
   };
 
+  // const handleFileChange = async (event) => {
+  //   const file = event.target.files[0];
+  //   if (!file) return;
+  //   setFileInput(file);
+  //   setShowOverlay(false);
 
+  //   const formData = new FormData();
+  //   formData.append("file", file);
 
-
+  //   try {
+  //     await axios.post("http://localhost:5001/api/process-document", formData);
+  //     console.log("Document processed successfully");
+  //   } catch (error) {
+  //     console.error("Error processing document:", error);
+  //   }
+  // };
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-    setFileInput(file);
-    setShowOverlay(false);
 
-    const formData = new FormData();
-    formData.append("file", file);
+    setFileInput(file); // Update the state with the selected file
+    setShowOverlay(false); // Close the overlay
 
     try {
-      await axios.post("http://localhost:5001/api/process-document", formData);
-      console.log("Document processed successfully");
+      // Step 1: Fetch the SAS Token from the Azure Function
+      const response = await axios.get('/api/GetSasToken'); // Replace with your Azure Function endpoint
+      const { sasToken, containerUrl } = response.data;
+
+      if (!sasToken || !containerUrl) {
+        throw new Error("Failed to retrieve SAS token or container URL.");
+      }
+
+      // Step 2: Initialize the BlobServiceClient with the SAS token
+      const blobServiceClient = new BlobServiceClient(`${containerUrl}?${sasToken}`);
+      const containerClient = blobServiceClient.getContainerClient(); // Get the container client
+
+      // Step 3: Upload the file to the Blob Storage
+      const blobClient = containerClient.getBlockBlobClient(file.name); // Use file name as blob name
+      await blobClient.uploadData(file, {
+        blobHTTPHeaders: { blobContentType: file.type }, // Set MIME type
+      });
+
+      console.log("File uploaded successfully to Azure Blob Storage");
+
     } catch (error) {
-      console.error("Error processing document:", error);
+      console.error("Error uploading file to Azure Blob Storage:", error);
     }
   };
 
@@ -252,6 +291,7 @@ function App() {
                 onChange={(e) => setTextInput(e.target.value)}
                 placeholder="Enter your message"
                 className="text-input"
+                onKeyDown={handleKeyEnter}
               />
               <input
                 type="file"
@@ -260,7 +300,7 @@ function App() {
                 id="file-upload"
               />
               <label htmlFor="file-upload" className="upload-button">📎</label>
-              <button onClick={handleTextSubmit} className="submit-button">Send</button>
+              <button onClick={handleTextSubmit} className="submit-button">Submit</button>
               <div className="recorder-container">
                 <button onClick={toggleRecording} className="microphone-button">
                   {isRecording ? 'Stop' : 'Start'} Recording
