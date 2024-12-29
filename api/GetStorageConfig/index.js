@@ -1,4 +1,9 @@
-const { BlobServiceClient, StorageSharedKeyCredential, generateBlobSASQueryParameters } = require("@azure/storage-blob");
+const {
+    BlobServiceClient,
+    StorageSharedKeyCredential,
+    generateBlobSASQueryParameters,
+    ContainerSASPermissions,
+} = require("@azure/storage-blob");
 
 module.exports = async function (context, req) {
     try {
@@ -25,20 +30,26 @@ module.exports = async function (context, req) {
         // Get container client
         const containerClient = blobServiceClient.getContainerClient(containerName);
 
-        // Set SAS permissions and expiry time
-        const permissions = "rw"; // Read and write permissions
-        const expiryTime = new Date(Date.now() + 3600 * 1000);
+        // Define permissions
+        const permissions = new ContainerSASPermissions();
+        permissions.read = true;
+        permissions.write = true;
 
         // Generate SAS query parameters
-        const sasQueryParams = generateBlobSASQueryParameters({
-            containerName,
-            permissions,
-            expiryTime,
-            sharedKeyCredential,
-        });
+        const startsOn = new Date(); // Current time
+        const expiresOn = new Date(startsOn.valueOf() + 3600 * 1000); // 1 hour later
+        const sasQueryParams = generateBlobSASQueryParameters(
+            {
+                containerName: containerName,
+                permissions: permissions.toString(),
+                startsOn: startsOn,
+                expiresOn: expiresOn,
+            },
+            sharedKeyCredential
+        );
 
         // Construct the SAS token
-        const sasToken = `?${sasQueryParams.toString()}`;
+        const sasToken = sasQueryParams.toString();
 
         // Return the SAS token and container URL
         context.res = {
