@@ -1,11 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { BlobServiceClient } from "@azure/storage-blob";
 import { Buffer } from 'buffer';
+import axios from 'axios';
+import './styles.css';
 
 // Make Buffer globally available
 window.Buffer = Buffer;
-import axios from 'axios';
-import './styles.css';
 
 function App() {
   const [textInput, setTextInput] = useState('');
