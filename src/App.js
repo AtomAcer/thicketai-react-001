@@ -151,17 +151,17 @@ function App() {
     setShowOverlay(false);
 
     try {
-      // Step 1: Fetch Storage Connection String and Container Name from Azure Function
+      // Step 1: Fetch SAS Token and Container URL from Azure Function
       const response = await axios.get('/api/GetStorageConfig'); // Azure Function endpoint
-      const { connectionString, containerName } = response.data;
+      const { sasToken, containerUrl } = response.data;
 
-      if (!connectionString || !containerName) {
-        throw new Error("Missing connection string or container name.");
+      if (!sasToken || !containerUrl) {
+        throw new Error("Failed to retrieve SAS token or container URL.");
       }
 
-      // Step 2: Initialize Blob Service Client with the connection string
-      const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
-      const containerClient = blobServiceClient.getContainerClient(containerName);
+      // Step 2: Initialize Blob Service Client with SAS token
+      const blobServiceClient = new BlobServiceClient(`${containerUrl}?${sasToken}`);
+      const containerClient = blobServiceClient.getContainerClient();
 
       // Step 3: Upload the File
       const blobClient = containerClient.getBlockBlobClient(file.name);
