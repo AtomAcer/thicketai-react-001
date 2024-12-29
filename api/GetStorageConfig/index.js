@@ -30,11 +30,17 @@ module.exports = async function (context, req) {
         // Get container client
         const containerClient = blobServiceClient.getContainerClient(CONTAINER_NAME);
 
+        // Define Permissions
+        const permissions = new ContainerSasPermissions();
+        permissions.read = true;
+        permissions.write = true;
+        permissions.delete = true;
+
         // Generate SAS Token
         const sasToken = generateBlobSasQueryParameters(
             {
                 containerName: CONTAINER_NAME,
-                permissions: ContainerSasPermissions.parse("rwd"),
+                permissions: permissions,
                 startsOn: new Date(),
                 expiresOn: new Date(new Date().valueOf() + 3600 * 1000), // Valid for 1 hour
             },
