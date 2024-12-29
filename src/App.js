@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { BlobServiceClient } from '@azure/storage-blob';
+import { BlobServiceClient, StorageSharedKeyCredential } from "@azure/storage-blob";
 import axios from 'axios';
 import './styles.css';
 
@@ -144,30 +144,31 @@ function App() {
     const file = event.target.files[0];
     if (!file) return;
 
-    setFileInput(file); // Update the state with the selected file
-    setShowOverlay(false); // Close the overlay
-
     try {
-      // Step 1: Fetch the SAS Token from the Azure Function
-      const response = await axios.get('/api/GetSasToken'); // Replace with your Azure Function endpoint
-      const { sasToken, containerUrl } = response.data;
+      // Step 1: Fetch Storage Account Credentials from Azure Function
+      const response = await axios.get('/api/GetStorageConfig'); // Azure Function endpoint
+      const { accountName, accountKey, containerName } = response.data;
 
-      if (!sasToken || !containerUrl) {
-        throw new Error("Failed to retrieve SAS token or container URL.");
+      if (!accountName || !accountKey || !containerName) {
+        throw new Error("Missing storage credentials or container name.");
       }
 
-      // Step 2: Initialize the BlobServiceClient with the SAS token
-      const blobServiceClient = new BlobServiceClient(`${containerUrl}?${sasToken}`);
-      const containerClient = blobServiceClient.getContainerClient(); // Get the container client
+      // Step 2: Create a BlobServiceClient with Shared Key Credential
+      const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+      const blobServiceClient = new BlobServiceClient(
+        `https://${accountName}.blob.core.windows.net`,
+        sharedKeyCredential
+      );
 
-      // Step 3: Upload the file to the Blob Storage
-      const blobClient = containerClient.getBlockBlobClient(file.name); // Use file name as blob name
+      const containerClient = blobServiceClient.getContainerClient(containerName);
+
+      // Step 3: Upload the File
+      const blobClient = containerClient.getBlockBlobClient(file.name);
       await blobClient.uploadData(file, {
-        blobHTTPHeaders: { blobContentType: file.type }, // Set MIME type
+        blobHTTPHeaders: { blobContentType: file.type },
       });
 
       console.log("File uploaded successfully to Azure Blob Storage");
-
     } catch (error) {
       console.error("Error uploading file to Azure Blob Storage:", error);
     }
