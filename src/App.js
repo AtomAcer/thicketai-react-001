@@ -1,5 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { BlobServiceClient } from "@azure/storage-blob";
+import { Buffer } from 'buffer';
+
+// Make Buffer globally available
+window.Buffer = Buffer;
 import axios from 'axios';
 import './styles.css';
 
