@@ -143,6 +143,8 @@ function App() {
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
+    setFileInput(file);
+    setShowOverlay(false);
 
     try {
       // Step 1: Fetch Storage Connection String and Container Name from Azure Function
