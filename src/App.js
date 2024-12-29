@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { BlobServiceClient, StorageSharedKeyCredential } from "@azure/storage-blob";
+import { BlobServiceClient } from "@azure/storage-blob";
 import axios from 'axios';
 import './styles.css';
 
@@ -145,21 +145,16 @@ function App() {
     if (!file) return;
 
     try {
-      // Step 1: Fetch Storage Account Credentials from Azure Function
+      // Step 1: Fetch Storage Connection String and Container Name from Azure Function
       const response = await axios.get('/api/GetStorageConfig'); // Azure Function endpoint
-      const { accountName, accountKey, containerName } = response.data;
+      const { connectionString, containerName } = response.data;
 
-      if (!accountName || !accountKey || !containerName) {
-        throw new Error("Missing storage credentials or container name.");
+      if (!connectionString || !containerName) {
+        throw new Error("Missing connection string or container name.");
       }
 
-      // Step 2: Create a BlobServiceClient with Shared Key Credential
-      const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
-      const blobServiceClient = new BlobServiceClient(
-        `https://${accountName}.blob.core.windows.net`,
-        sharedKeyCredential
-      );
-
+      // Step 2: Initialize Blob Service Client with the connection string
+      const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
       const containerClient = blobServiceClient.getContainerClient(containerName);
 
       // Step 3: Upload the File

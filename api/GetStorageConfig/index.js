@@ -1,25 +1,24 @@
 module.exports = async function (context, req) {
     try {
-        const AZURE_STORAGE_ACCOUNT_NAME = process.env.AZURE_STORAGE_ACCOUNT_NAME;
-        const AZURE_STORAGE_ACCOUNT_KEY = process.env.AZURE_STORAGE_ACCOUNT_KEY;
+        const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING;
+        const CONTAINER_NAME = "dev-docs-save";
 
-        if (!AZURE_STORAGE_ACCOUNT_NAME || !AZURE_STORAGE_ACCOUNT_KEY) {
-            throw new Error("Storage account name or key is not set.");
+        if (!AZURE_STORAGE_CONNECTION_STRING) {
+            throw new Error("Azure Storage connection string is not set.");
         }
 
         context.res = {
             status: 200,
             body: {
-                accountName: AZURE_STORAGE_ACCOUNT_NAME,
-                accountKey: AZURE_STORAGE_ACCOUNT_KEY,
-                containerName: "dev-docs-save",
+                connectionString: AZURE_STORAGE_CONNECTION_STRING,
+                containerName: CONTAINER_NAME,
             },
         };
     } catch (error) {
-        context.log.error("Error sending storage credentials:", error.message);
+        context.log.error("Error retrieving connection string:", error.message);
         context.res = {
             status: 500,
-            body: "Failed to retrieve storage credentials.",
+            body: "Failed to retrieve connection string.",
         };
     }
 };
