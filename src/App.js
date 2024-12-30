@@ -34,7 +34,7 @@ function App() {
 
       // Step 2: Build the Azure Search query
       const indexName = "dev-001-v001";
-      const searchUrl = `${azureSearchEndpoint}/indexes/${indexName}/docs`;
+      const searchUrl = `${azureSearchEndpoint}/indexes/${indexName}/docs?api-version=2024-11-01`;
       const searchPayload = { search: query, top: 5 };
 
       // Step 3: Query Azure Cognitive Search
