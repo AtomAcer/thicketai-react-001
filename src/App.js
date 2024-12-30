@@ -64,9 +64,9 @@ function App() {
       });
 
       // Step 5: Handle different response scenarios
-      if (response.status === 204) {
-        return "No results found for your search query.";
-      }
+      // if (response.status === 204) {
+      //   return "No results found for your search query.";
+      // }
 
       if (!response.data || !response.data.value) {
         throw new Error("Invalid response format from Azure Search");
