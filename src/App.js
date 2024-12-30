@@ -39,7 +39,7 @@ function App() {
       // Step 2: Build the Azure Search query
       const indexName = "dev-001-v001";
       const cleanEndpoint = azureSearchEndpoint.replace(/\/$/, "");
-      const searchUrl = `${cleanEndpoint}/indexes/${indexName}/docs/search?api-version=2023-11-01`;
+      const searchUrl = `${cleanEndpoint}/indexes/${indexName}/docs/search?api-version=2024-11-01-preview`;
 
       // Step 3: Build a more complete search payload
       // Removed the highlight field until we confirm the correct field name
