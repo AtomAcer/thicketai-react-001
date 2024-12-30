@@ -28,15 +28,29 @@ function App() {
   // Azure Cognitive Search Integration
   const queryAzureSearch = async (query) => {
     try {
-      // Call the Azure Function to query Azure Cognitive Search
-      const response = await axios.post("/api/ProxyAzureSearch", { query, top: 5 });
+      // Step 1: Fetch Azure Search API Key and Endpoint from the Azure Function
+      const configResponse = await axios.get("/api/GetAISearchConfig");
+      const { apiKey: azureSearchApiKey, endpoint: azureSearchEndpoint } = configResponse.data;
+
+      // Step 2: Build the Azure Search query
+      const indexName = "dev-001-v001";
+      const searchUrl = `${azureSearchEndpoint}/indexes/${indexName}/docs`;
+      const searchPayload = { search: query, top: 5 };
+
+      // Step 3: Query Azure Cognitive Search
+      const response = await axios.post(searchUrl, searchPayload, {
+        headers: {
+          "Content-Type": "application/json",
+          "api-key": azureSearchApiKey,
+        },
+      });
 
       const results = response.data.value;
       if (results.length === 0) {
         return "No relevant information found in the search index.";
       }
 
-      // Format the results for the LLM prompt
+      // Step 4: Format the results for the LLM prompt
       let context = "Here is the relevant information from the documents:\n\n";
       results.forEach((result, index) => {
         context += `Result ${index + 1}:\n`;
