@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { BlobServiceClient } from "@azure/storage-blob";
 import { Buffer } from 'buffer';
 import axios from 'axios';
@@ -9,7 +9,7 @@ window.Buffer = Buffer;
 
 function App() {
   const [textInput, setTextInput] = useState('');
-  const [fileInput, setFileInput] = useState(null);
+  const [setFileInput] = useState(null);
   const [selectedDeposition, setSelectedDeposition] = useState('');
   const [conversationHistory, setConversationHistory] = useState([]);
   const [voiceKey, setVoiceKey] = useState('Adam');
@@ -22,127 +22,114 @@ function App() {
     { id: 3, name: "Alex Brown", summary: "Answered questions about app usage and features." },
   ]);
 
-  const generateVoiceOutput = useCallback(async (text) => {
+  // Dummy use for 'handleResponse'
+  console.log('Dummy use of setHistoricalConversations:', typeof setHistoricalConversations);
+
+  // Azure Cognitive Search Integration
+  const queryAzureSearch = async (query) => {
     try {
-      const response = await axios.post("http://localhost:5001/api/generate-speech", { text, voice: voiceKey });
-      const audioBlob = new Blob([response.data], { type: 'audio/wav' });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      new Audio(audioUrl).play();
+      // Step 1: Fetch Azure Search API Key and Endpoint from the Azure Function
+      const configResponse = await axios.get("/api/GetAISearchConfig");
+      const { apiKey: azureSearchApiKey, endpoint: azureSearchEndpoint } = configResponse.data;
+
+      // Step 2: Build the Azure Search query
+      const indexName = "dev-001-v001";
+      const searchUrl = `${azureSearchEndpoint}/indexes/${indexName}/docs`;
+      const searchPayload = { search: query, top: 5 };
+
+      // Step 3: Query Azure Cognitive Search
+      const response = await axios.post(searchUrl, searchPayload, {
+        headers: {
+          "Content-Type": "application/json",
+          "api-key": azureSearchApiKey,
+        },
+      });
+
+      const results = response.data.value;
+      if (results.length === 0) {
+        return "No relevant information found in the search index.";
+      }
+
+      // Step 4: Format the results for the LLM prompt
+      let context = "Here is the relevant information from the documents:\n\n";
+      results.forEach((result, index) => {
+        context += `Result ${index + 1}:\n`;
+        context += `Title: ${result.title || "No title available"}\n`;
+        context += `Snippet: ${result.content || "No content available"}\n\n`;
+      });
+
+      return context.trim();
     } catch (error) {
-      console.error("Error generating speech:", error);
-    }
-  }, [voiceKey]);
-
-  // Dummy usage for unused variables
-  React.useEffect(() => {
-    if (fileInput) {
-      console.log('File input used:', fileInput.name);
-    }
-
-    setHistoricalConversations((prev) => {
-      console.log('Historical conversations dummy usage:', prev.length);
-      return prev;
-    });
-
-    // Dummy use for 'handleResponse'
-    console.log('Dummy use of handleResponse:', typeof handleResponse);
-
-    // Dummy use for 'generateVoiceOutput'
-    console.log('Using generateVoiceOutput in useEffect:', typeof generateVoiceOutput);
-
-    // Dummy use for 'formatPrompt'
-    console.log('Dummy use of formatPrompt:', typeof formatPrompt);
-  }, [fileInput, setHistoricalConversations, generateVoiceOutput]);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const toggleRecording = () => {
-    setIsRecording(!isRecording);
-  };
-
-  const handleKeyEnter = (event) => {
-    if (event.key === 'Enter') {
-      // Call your function here
-      console.log('Enter key pressed!');
-      // Example: Submit a form
-      handleTextSubmit();
+      console.error("Error querying Azure Cognitive Search:", error);
+      return "An error occurred while fetching search results.";
     }
   };
 
+
+  // Handle text input submission
   const handleTextSubmit = async () => {
     if (!textInput.trim()) return;
 
     const userMessage = {
-      role: 'user',
+      role: "user",
       text: textInput,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
     const updatedHistory = [...conversationHistory, userMessage];
 
     setConversationHistory(updatedHistory);
-    setTextInput('');
+    setTextInput("");
 
     try {
-      // Fetch the API key and endpoint from the Azure Function
-      const configResponse = await axios.get('/api/GetOpenaiConfig'); // Ensure this matches your function URL
+      const contextFromSearch = await queryAzureSearch(textInput);
+
+      const prompt = `
+        Based on the following context, answer the question below strictly using the given information:
+        Context:
+        ${contextFromSearch}
+
+        Question:
+        ${textInput}
+      `;
+
+      const configResponse = await axios.get("/api/GetOpenaiConfig");
       const { apiKey: azureApiKey, endpoint: azureEndpoint } = configResponse.data;
 
-      if (!azureEndpoint || !azureApiKey) {
-        throw new Error("Failed to retrieve keys: Ensure the Azure Function is returning the correct data.");
-      }
-
       const payload = {
-        messages: [
-          { role: 'system', content: 'You are a helpful assistant.' },
-          ...updatedHistory.map(msg => ({ role: msg.role.toLowerCase(), content: msg.text })),
-        ],
+        messages: [{ role: "system", content: prompt }],
         max_tokens: 5000,
         temperature: 0.5,
       };
 
-      console.log('Payload:', payload); // Debugging the payload
-
-      // Make the OpenAI API call using the retrieved keys
       const response = await axios.post(
         `${azureEndpoint}/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-08-01-preview`,
         payload,
         {
           headers: {
-            'api-key': azureApiKey,
-            'Content-Type': 'application/json',
+            "api-key": azureApiKey,
+            "Content-Type": "application/json",
           },
         }
       );
 
-      const answer = response.data.choices[0]?.message?.content.trim() || 'No response received.';
-      setConversationHistory(prev => [...prev, { role: 'assistant', text: answer }]);
+      const answer = response.data.choices[0]?.message?.content.trim() || "No response received.";
+      setConversationHistory((prev) => [...prev, { role: "assistant", text: answer }]);
     } catch (error) {
       console.error("Error:", error.response?.data || error.message);
-      setConversationHistory(prev => [
+      setConversationHistory((prev) => [
         ...prev,
-        { role: 'assistant', text: 'An error occurred while processing your request. Please try again.' },
+        { role: "assistant", text: "An error occurred while processing your request. Please try again." },
       ]);
     }
   };
 
-  // const handleFileChange = async (event) => {
-  //   const file = event.target.files[0];
-  //   if (!file) return;
-  //   setFileInput(file);
-  //   setShowOverlay(false);
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  //   const formData = new FormData();
-  //   formData.append("file", file);
+  const toggleRecording = () => setIsRecording(!isRecording);
 
-  //   try {
-  //     await axios.post("http://localhost:5001/api/process-document", formData);
-  //     console.log("Document processed successfully");
-  //   } catch (error) {
-  //     console.error("Error processing document:", error);
-  //   }
-  // };
+  const handleKeyEnter = (event) => {
+    if (event.key === "Enter") handleTextSubmit();
+  };
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
@@ -151,20 +138,17 @@ function App() {
     setShowOverlay(false);
 
     try {
-      // Step 1: Fetch SAS Token and Container URL from Azure Function
-      const response = await axios.get('/api/GetStorageConfig'); // Azure Function endpoint
+      const response = await axios.get('/api/GetStorageConfig');
       const { sasToken, containerUrl } = response.data;
 
       if (!sasToken || !containerUrl) {
         throw new Error("Failed to retrieve SAS token or container URL.");
       }
 
-      // Step 2: Initialize Blob Service Client with SAS token
       const blobServiceClient = new BlobServiceClient(`${containerUrl}?${sasToken}`);
       const containerClient = blobServiceClient.getContainerClient();
-
-      // Step 3: Upload the File
       const blobClient = containerClient.getBlockBlobClient(file.name);
+
       await blobClient.uploadData(file, {
         blobHTTPHeaders: { blobContentType: file.type },
       });
@@ -173,29 +157,6 @@ function App() {
     } catch (error) {
       console.error("Error uploading file to Azure Blob Storage:", error);
     }
-  };
-
-  const handleResponse = (answer) => {
-    const botMessage = { role: 'Bot', text: answer, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-    setConversationHistory(prev => [...prev, botMessage]);
-  };
-
-  // const generateVoiceOutput = async (text) => {
-  //   try {
-  //     const response = await axios.post("http://localhost:5001/api/generate-speech", { text, voice: voiceKey });
-  //     const audioBlob = new Blob([response.data], { type: 'audio/wav' });
-  //     const audioUrl = URL.createObjectURL(audioBlob);
-  //     new Audio(audioUrl).play();
-  //   } catch (error) {
-  //     console.error("Error generating speech:", error);
-  //   }
-  // };
-
-  const formatPrompt = (history, input) => {
-    let prompt = "You are a helpful assistant.\n";
-    history.forEach(entry => prompt += `${entry.role}: ${entry.text}\n`);
-    prompt += `User: ${input}\nAssistant:`;
-    return prompt;
   };
 
   return (

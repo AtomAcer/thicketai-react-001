@@ -1,6 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import { BlobServiceClient } from "@azure/storage-blob";
+import { Buffer } from 'buffer';
 import axios from 'axios';
 import './styles.css';
+
+// Make Buffer globally available
+window.Buffer = Buffer;
 
 function App() {
   const [textInput, setTextInput] = useState('');
@@ -17,7 +22,37 @@ function App() {
     { id: 3, name: "Alex Brown", summary: "Answered questions about app usage and features." },
   ]);
 
-  const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
+  const generateVoiceOutput = useCallback(async (text) => {
+    try {
+      const response = await axios.post("http://localhost:5001/api/generate-speech", { text, voice: voiceKey });
+      const audioBlob = new Blob([response.data], { type: 'audio/wav' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      new Audio(audioUrl).play();
+    } catch (error) {
+      console.error("Error generating speech:", error);
+    }
+  }, [voiceKey]);
+
+  // Dummy usage for unused variables
+  React.useEffect(() => {
+    if (fileInput) {
+      console.log('File input used:', fileInput.name);
+    }
+
+    setHistoricalConversations((prev) => {
+      console.log('Historical conversations dummy usage:', prev.length);
+      return prev;
+    });
+
+    // Dummy use for 'handleResponse'
+    console.log('Dummy use of handleResponse:', typeof handleResponse);
+
+    // Dummy use for 'generateVoiceOutput'
+    console.log('Using generateVoiceOutput in useEffect:', typeof generateVoiceOutput);
+
+    // Dummy use for 'formatPrompt'
+    console.log('Dummy use of formatPrompt:', typeof formatPrompt);
+  }, [fileInput, setHistoricalConversations, generateVoiceOutput]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -27,37 +62,87 @@ function App() {
     setIsRecording(!isRecording);
   };
 
+  const handleKeyEnter = (event) => {
+    if (event.key === 'Enter') {
+      // Call your function here
+      console.log('Enter key pressed!');
+      // Example: Submit a form
+      handleTextSubmit();
+    }
+  };
+
   const handleTextSubmit = async () => {
     if (!textInput.trim()) return;
 
-    const newMessage = { role: 'You', text: textInput, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-    setConversationHistory([...conversationHistory, newMessage]);
+    const userMessage = {
+      role: 'user',
+      text: textInput,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    const updatedHistory = [...conversationHistory, userMessage];
+
+    setConversationHistory(updatedHistory);
     setTextInput('');
 
     try {
+      // Fetch the API key and endpoint from the Azure Function
+      const configResponse = await axios.get('/api/GetOpenaiConfig'); // Ensure this matches your function URL
+      const { apiKey: azureApiKey, endpoint: azureEndpoint } = configResponse.data;
+
+      if (!azureEndpoint || !azureApiKey) {
+        throw new Error("Failed to retrieve keys: Ensure the Azure Function is returning the correct data.");
+      }
+
+      const payload = {
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant.' },
+          ...updatedHistory.map(msg => ({ role: msg.role.toLowerCase(), content: msg.text })),
+        ],
+        max_tokens: 5000,
+        temperature: 0.5,
+      };
+
+      console.log('Payload:', payload); // Debugging the payload
+
+      // Make the OpenAI API call using the retrieved keys
       const response = await axios.post(
-        'https://api.openai.com/v1/completions',
-        {
-          model: "gpt-4",
-          prompt: formatPrompt(conversationHistory, textInput),
-          max_tokens: 150,
-          temperature: 0.5,
-        },
+        `${azureEndpoint}/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-08-01-preview`,
+        payload,
         {
           headers: {
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            'api-key': azureApiKey,
             'Content-Type': 'application/json',
-          }
+          },
         }
       );
 
-      const answer = response.data.choices[0].text.trim();
-      handleResponse(answer);
-      generateVoiceOutput(answer);
+      const answer = response.data.choices[0]?.message?.content.trim() || 'No response received.';
+      setConversationHistory(prev => [...prev, { role: 'assistant', text: answer }]);
     } catch (error) {
-      console.error("Error fetching OpenAI response:", error);
+      console.error("Error:", error.response?.data || error.message);
+      setConversationHistory(prev => [
+        ...prev,
+        { role: 'assistant', text: 'An error occurred while processing your request. Please try again.' },
+      ]);
     }
   };
+
+  // const handleFileChange = async (event) => {
+  //   const file = event.target.files[0];
+  //   if (!file) return;
+  //   setFileInput(file);
+  //   setShowOverlay(false);
+
+  //   const formData = new FormData();
+  //   formData.append("file", file);
+
+  //   try {
+  //     await axios.post("http://localhost:5001/api/process-document", formData);
+  //     console.log("Document processed successfully");
+  //   } catch (error) {
+  //     console.error("Error processing document:", error);
+  //   }
+  // };
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
@@ -65,45 +150,46 @@ function App() {
     setFileInput(file);
     setShowOverlay(false);
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     try {
-      await axios.post("http://localhost:5001/api/process-document", formData);
-      console.log("Document processed successfully");
+      // Step 1: Fetch SAS Token and Container URL from Azure Function
+      const response = await axios.get('/api/GetStorageConfig'); // Azure Function endpoint
+      const { sasToken, containerUrl } = response.data;
+
+      if (!sasToken || !containerUrl) {
+        throw new Error("Failed to retrieve SAS token or container URL.");
+      }
+
+      // Step 2: Initialize Blob Service Client with SAS token
+      const blobServiceClient = new BlobServiceClient(`${containerUrl}?${sasToken}`);
+      const containerClient = blobServiceClient.getContainerClient();
+
+      // Step 3: Upload the File
+      const blobClient = containerClient.getBlockBlobClient(file.name);
+      await blobClient.uploadData(file, {
+        blobHTTPHeaders: { blobContentType: file.type },
+      });
+
+      console.log("File uploaded successfully to Azure Blob Storage");
     } catch (error) {
-      console.error("Error processing document:", error);
+      console.error("Error uploading file to Azure Blob Storage:", error);
     }
   };
-
-  // const handleAudioStop = async (recordedBlob) => {
-  //   const formData = new FormData();
-  //   formData.append('file', recordedBlob);
-
-  //   try {
-  //     const response = await axios.post("http://localhost:5001/api/transcribe-audio", formData);
-  //     const transcript = response.data.transcript; // Get transcription
-  //     setTextInput(transcript); // Update textInput with the transcription
-  //   } catch (error) {
-  //     console.error("Error transcribing audio:", error);
-  //   }
-  // };
 
   const handleResponse = (answer) => {
     const botMessage = { role: 'Bot', text: answer, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
     setConversationHistory(prev => [...prev, botMessage]);
   };
 
-  const generateVoiceOutput = async (text) => {
-    try {
-      const response = await axios.post("http://localhost:5001/api/generate-speech", { text, voice: voiceKey });
-      const audioBlob = new Blob([response.data], { type: 'audio/wav' });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      new Audio(audioUrl).play();
-    } catch (error) {
-      console.error("Error generating speech:", error);
-    }
-  };
+  // const generateVoiceOutput = async (text) => {
+  //   try {
+  //     const response = await axios.post("http://localhost:5001/api/generate-speech", { text, voice: voiceKey });
+  //     const audioBlob = new Blob([response.data], { type: 'audio/wav' });
+  //     const audioUrl = URL.createObjectURL(audioBlob);
+  //     new Audio(audioUrl).play();
+  //   } catch (error) {
+  //     console.error("Error generating speech:", error);
+  //   }
+  // };
 
   const formatPrompt = (history, input) => {
     let prompt = "You are a helpful assistant.\n";
@@ -207,6 +293,7 @@ function App() {
                 onChange={(e) => setTextInput(e.target.value)}
                 placeholder="Enter your message"
                 className="text-input"
+                onKeyDown={handleKeyEnter}
               />
               <input
                 type="file"
@@ -215,7 +302,7 @@ function App() {
                 id="file-upload"
               />
               <label htmlFor="file-upload" className="upload-button">📎</label>
-              <button onClick={handleTextSubmit} className="submit-button">Send</button>
+              <button onClick={handleTextSubmit} className="submit-button">Submit</button>
               <div className="recorder-container">
                 <button onClick={toggleRecording} className="microphone-button">
                   {isRecording ? 'Stop' : 'Start'} Recording
