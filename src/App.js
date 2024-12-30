@@ -38,20 +38,17 @@ function App() {
 
       // Step 2: Build the Azure Search query
       const indexName = "dev-001-v001";
-      // Ensure the endpoint doesn't have a trailing slash
       const cleanEndpoint = azureSearchEndpoint.replace(/\/$/, "");
       const searchUrl = `${cleanEndpoint}/indexes/${indexName}/docs/search?api-version=2023-11-01`;
 
       // Step 3: Build a more complete search payload
+      // Removed the highlight field until we confirm the correct field name
       const searchPayload = {
         search: query,
         top: 5,
         queryType: "simple",
         searchMode: "all",
-        select: "title,content",
-        highlight: "content",
-        highlightPreTag: "<em>",
-        highlightPostTag: "</em>"
+        select: "*"  // First get all fields to inspect the schema
       };
 
       // Step 4: Query Azure Cognitive Search
@@ -63,7 +60,7 @@ function App() {
           "Content-Type": "application/json",
           "api-key": azureSearchApiKey
         },
-        validateStatus: (status) => status < 500 // Consider all non-500 responses as valid
+        validateStatus: (status) => status < 500
       });
 
       // Step 5: Handle different response scenarios
@@ -84,11 +81,20 @@ function App() {
       let context = "Here is the relevant information from the documents:\n\n";
       results.forEach((result, index) => {
         context += `Result ${index + 1}:\n`;
-        context += `Title: ${result.title || "No title available"}\n`;
 
-        // Use highlighted content if available, otherwise fall back to regular content
-        const content = result["@search.highlights"]?.content?.[0] || result.content || "No content available";
-        context += `Snippet: ${content}\n\n`;
+        // Log the first result to inspect available fields
+        if (index === 0) {
+          console.log("Available fields in result:", Object.keys(result));
+        }
+
+        // Dynamically handle available fields
+        Object.entries(result).forEach(([key, value]) => {
+          // Skip metadata fields that start with @
+          if (!key.startsWith('@')) {
+            context += `${key}: ${value || "Not available"}\n`;
+          }
+        });
+        context += '\n';
       });
 
       return context.trim();
@@ -96,10 +102,9 @@ function App() {
     } catch (error) {
       console.error("Error querying Azure Cognitive Search:", error);
 
-      // Provide more specific error messages based on the error type
       if (error.response) {
         const status = error.response.status;
-        const message = error.response.data?.message || error.response.statusText;
+        const message = error.response.data?.error?.message || error.response.statusText;
         throw new Error(`Azure Search API error (${status}): ${message}`);
       }
 
