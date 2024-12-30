@@ -72,10 +72,10 @@ function App() {
         throw new Error("Invalid response format from Azure Search");
       }
 
-      const results = response.data.value;
-      if (results.length === 0) {
-        return "No relevant information found in the search index.";
-      }
+      // const results = response.data.value;
+      // if (results.length === 0) {
+      //   return "No relevant information found in the search index.";
+      // }
 
       // Step 6: Format the results for the LLM prompt
       let context = "Here is the relevant information from the documents:\n\n";
