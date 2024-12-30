@@ -32,36 +32,82 @@ function App() {
       const configResponse = await axios.get("/api/GetAISearchConfig");
       const { apiKey: azureSearchApiKey, endpoint: azureSearchEndpoint } = configResponse.data;
 
+      if (!azureSearchApiKey || !azureSearchEndpoint) {
+        throw new Error("Missing Azure Search configuration");
+      }
+
       // Step 2: Build the Azure Search query
       const indexName = "dev-001-v001";
-      const searchUrl = `${azureSearchEndpoint}/indexes/${indexName}/docs?api-version=2024-11-01`;
-      const searchPayload = { search: query, top: 5 };
+      // Ensure the endpoint doesn't have a trailing slash
+      const cleanEndpoint = azureSearchEndpoint.replace(/\/$/, "");
+      const searchUrl = `${cleanEndpoint}/indexes/${indexName}/docs/search?api-version=2023-11-01`;
 
-      // Step 3: Query Azure Cognitive Search
-      const response = await axios.post(searchUrl, searchPayload, {
+      // Step 3: Build a more complete search payload
+      const searchPayload = {
+        search: query,
+        top: 5,
+        queryType: "simple",
+        searchMode: "all",
+        select: "title,content",
+        highlight: "content",
+        highlightPreTag: "<em>",
+        highlightPostTag: "</em>"
+      };
+
+      // Step 4: Query Azure Cognitive Search
+      const response = await axios({
+        method: 'POST',
+        url: searchUrl,
+        data: searchPayload,
         headers: {
           "Content-Type": "application/json",
-          "api-key": azureSearchApiKey,
+          "api-key": azureSearchApiKey
         },
+        validateStatus: (status) => status < 500 // Consider all non-500 responses as valid
       });
+
+      // Step 5: Handle different response scenarios
+      if (response.status === 204) {
+        return "No results found for your search query.";
+      }
+
+      if (!response.data || !response.data.value) {
+        throw new Error("Invalid response format from Azure Search");
+      }
 
       const results = response.data.value;
       if (results.length === 0) {
         return "No relevant information found in the search index.";
       }
 
-      // Step 4: Format the results for the LLM prompt
+      // Step 6: Format the results for the LLM prompt
       let context = "Here is the relevant information from the documents:\n\n";
       results.forEach((result, index) => {
         context += `Result ${index + 1}:\n`;
         context += `Title: ${result.title || "No title available"}\n`;
-        context += `Snippet: ${result.content || "No content available"}\n\n`;
+
+        // Use highlighted content if available, otherwise fall back to regular content
+        const content = result["@search.highlights"]?.content?.[0] || result.content || "No content available";
+        context += `Snippet: ${content}\n\n`;
       });
 
       return context.trim();
+
     } catch (error) {
       console.error("Error querying Azure Cognitive Search:", error);
-      return "An error occurred while fetching search results.";
+
+      // Provide more specific error messages based on the error type
+      if (error.response) {
+        const status = error.response.status;
+        const message = error.response.data?.message || error.response.statusText;
+        throw new Error(`Azure Search API error (${status}): ${message}`);
+      }
+
+      if (error.request) {
+        throw new Error("No response received from Azure Search API");
+      }
+
+      throw new Error(`Azure Search error: ${error.message}`);
     }
   };
 
