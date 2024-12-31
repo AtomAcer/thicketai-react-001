@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BlobServiceClient } from "@azure/storage-blob";
+import { SearchClient, AzureKeyCredential } from "@azure/search-documents";
 import { Buffer } from 'buffer';
 import axios from 'axios';
 import './styles.css';
@@ -28,77 +29,73 @@ function App() {
   // Azure Cognitive Search Integration
   const queryAzureSearch = async (query) => {
     try {
-      // Step 1: Fetch Azure Search API Key and Endpoint from the Azure Function
-      const configResponse = await axios.get("/api/GetAISearchConfig");
-      const { apiKey: azureSearchApiKey, endpoint: azureSearchEndpoint } = configResponse.data;
+      // Fetch Azure Search API configuration
+      const { data: { apiKey: azureSearchApiKey, endpoint: azureSearchEndpoint } } =
+        await axios.get("/api/GetAISearchConfig");
 
       if (!azureSearchApiKey || !azureSearchEndpoint) {
         throw new Error("Missing Azure Search configuration");
       }
 
-      // Step 2: Build the Azure Search query
       const indexName = "dev-001-v001";
-      const cleanEndpoint = azureSearchEndpoint.replace(/\/$/, "");
-      const searchUrl = `${cleanEndpoint}/indexes/${indexName}/docs/search?api-version=2024-11-01-preview`;
 
-      // Step 3: Build a more complete search payload
-      // Removed the highlight field until we confirm the correct field name
-      const searchPayload = {
-        search: query,
-        top: 5,
-        queryType: "simple",
-        searchMode: "all",
-        select: "*"  // First get all fields to inspect the schema
+      // Initialize SearchClient
+      const searchClient = new SearchClient(
+        azureSearchEndpoint,
+        indexName,
+        new AzureKeyCredential(azureSearchApiKey)
+      );
+
+      // Search options
+      const searchOptions = {
+        top: 5, // Limit to top 5 results
+        select: "*", // Retrieve all fields dynamically
       };
 
-      // Step 4: Query Azure Cognitive Search
-      const response = await axios({
-        method: 'POST',
-        url: searchUrl,
-        data: searchPayload,
-        headers: {
-          "Content-Type": "application/json",
-          "api-key": azureSearchApiKey
-        },
-        validateStatus: (status) => status < 500
-      });
+      // Perform the search
+      const searchResults = await searchClient.search(query, searchOptions);
 
-      // Step 5: Handle different response scenarios
-      // if (response.status === 204) {
-      //   return "No results found for your search query.";
-      // }
+      const formattedResults = [];
+      const answers = searchResults["@search.answers"] || []; // Extract semantic answers if present
 
-      if (!response.data || !response.data.value) {
-        throw new Error("Invalid response format from Azure Search");
+      // Format semantic answers
+      if (answers.length > 0) {
+        formattedResults.push("Semantic Answers:");
+        answers.forEach((answer, idx) => {
+          formattedResults.push(`Answer ${idx + 1}:`);
+          formattedResults.push(`Text: ${answer.text}`);
+          if (answer.highlights) {
+            formattedResults.push(`Highlights: ${answer.highlights}`);
+          }
+          formattedResults.push(`Score: ${answer.score}\n`);
+        });
       }
 
-      // const results = response.data.value;
-      // if (results.length === 0) {
-      //   return "No relevant information found in the search index.";
-      // }
+      // Process search documents dynamically
+      formattedResults.push("Search Results:");
+      for await (const result of searchResults.results) {
+        const document = result.document;
 
-      // Step 6: Format the results for the LLM prompt
-      let context = "Here is the relevant information from the documents:\n\n";
-      results.forEach((result, index) => {
-        context += `Result ${index + 1}:\n`;
-
-        // Log the first result to inspect available fields
-        if (index === 0) {
-          console.log("Available fields in result:", Object.keys(result));
-        }
-
-        // Dynamically handle available fields
-        Object.entries(result).forEach(([key, value]) => {
-          // Skip metadata fields that start with @
-          if (!key.startsWith('@')) {
-            context += `${key}: ${value || "Not available"}\n`;
+        formattedResults.push(`Result:`);
+        Object.entries(document).forEach(([key, value]) => {
+          if (!key.startsWith("@")) { // Exclude metadata fields like @search.score
+            formattedResults.push(`${key}: ${value || "Not available"}`);
           }
         });
-        context += '\n';
-      });
 
-      return context.trim();
+        // Include special fields like score and captions if available
+        const captions = document["@search.captions"] || [];
+        const captionText = captions.length > 0 ? captions[0].text : "No captions available.";
+        formattedResults.push(`Caption: ${captionText}`);
+        formattedResults.push(`Score: ${result["@search.score"] || "N/A"}`);
+        formattedResults.push(`Reranker Score: ${result["@search.rerankerScore"] || "N/A"}\n`);
+      }
 
+      if (formattedResults.length === 0) {
+        return "No relevant information found in the search index.";
+      }
+
+      return formattedResults.join("\n");
     } catch (error) {
       console.error("Error querying Azure Cognitive Search:", error);
 
@@ -108,14 +105,9 @@ function App() {
         throw new Error(`Azure Search API error (${status}): ${message}`);
       }
 
-      if (error.request) {
-        throw new Error("No response received from Azure Search API");
-      }
-
       throw new Error(`Azure Search error: ${error.message}`);
     }
   };
-
 
   // Handle text input submission
   const handleTextSubmit = async () => {
