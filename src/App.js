@@ -95,7 +95,7 @@ function App() {
         return "No relevant information found in the search index.";
       }
 
-      return formattedResults.join("\n");
+      return formattedResults;
     } catch (error) {
       console.error("Error querying Azure Cognitive Search:", error);
 
