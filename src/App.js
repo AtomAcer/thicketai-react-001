@@ -87,23 +87,17 @@ function App() {
     setConversationHistory(updatedHistory);
     setTextInput('');
 
-    // try {
-    //   // Prepare the payload for the Azure Function
-    //   const payload = {
-    //     question: textInput,
-    //     history: updatedHistory.map(msg => ({
-    //       role: msg.role,
-    //       content: msg.text
-    //     })),
-    //   };
-
     try {
-      // Prepare the payload for the Azure Function
       const payload = {
-        question: textInput
+        question: textInput,
+        history: updatedHistory.map(msg => ({
+          role: msg.role,
+          content: msg.text,
+        })),
       };
 
-      // Call the Azure Function endpoint
+      console.log("Payload sent to Azure Function:", payload);
+
       const response = await axios.post(
         AZURE_FUNCTION_URL,
         payload,
@@ -114,10 +108,10 @@ function App() {
         }
       );
 
-      // Extract the answer from the response
+      console.log("Response from Azure Function:", response.data);
+
       const answer = response.data?.response || 'No response received.';
 
-      // Update the conversation history with the assistant's response
       setConversationHistory(prev => [
         ...prev,
         { role: 'assistant', text: answer },
@@ -130,6 +124,7 @@ function App() {
       ]);
     }
   };
+
 
 
   // const handleFileChange = async (event) => {
