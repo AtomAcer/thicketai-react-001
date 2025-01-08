@@ -22,6 +22,8 @@ function App() {
     { id: 3, name: "Alex Brown", summary: "Answered questions about app usage and features." },
   ]);
 
+  console.log("Environment Variables:", process.env);
+
   const generateVoiceOutput = useCallback(async (text) => {
     try {
       const response = await axios.post("http://localhost:5001/api/generate-speech", { text, voice: voiceKey });
@@ -74,7 +76,7 @@ function App() {
   const handleTextSubmit = async () => {
     if (!textInput.trim()) return;
 
-    const FUNCTION_KEY = process.env.REACT_LLM_RESPONSE_FN_KEY;
+    const FUNCTION_KEY = process.env.REACT_APP_LLM_RESPONSE_FN_KEY;
     console.log("FUNCTION_KEY:", FUNCTION_KEY);
 
     const AZURE_FUNCTION_URL = `https://fn-thicketai-dev-001.azurewebsites.net/api/GetLLMResponse?code=${FUNCTION_KEY}`;
