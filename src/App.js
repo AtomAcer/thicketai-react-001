@@ -79,7 +79,10 @@ function App() {
     const FUNCTION_KEY = process.env.REACT_APP_LLM_RESPONSE_FN_KEY;
     console.log("FUNCTION_KEY:", FUNCTION_KEY);
 
-    const AZURE_FUNCTION_URL = `https://fn-thicketai-dev-001.azurewebsites.net/api/GetLLMResponse?code=${FUNCTION_KEY}`;
+    // const AZURE_FUNCTION_URL = `https://fn-thicketai-dev-001.azurewebsites.net/api/GetLLMResponse?code=${FUNCTION_KEY}`;
+
+    const AZURE_FUNCTION_URL = `https://fn-thicketai-dev-001.azurewebsites.net/api/GetLLMResponse`;
+
 
     const userMessage = {
       role: 'user',
