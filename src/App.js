@@ -87,14 +87,20 @@ function App() {
     setConversationHistory(updatedHistory);
     setTextInput('');
 
+    // try {
+    //   // Prepare the payload for the Azure Function
+    //   const payload = {
+    //     question: textInput,
+    //     history: updatedHistory.map(msg => ({
+    //       role: msg.role,
+    //       content: msg.text
+    //     })),
+    //   };
+
     try {
       // Prepare the payload for the Azure Function
       const payload = {
-        question: textInput,
-        history: updatedHistory.map(msg => ({
-          role: msg.role,
-          content: msg.text
-        })),
+        question: textInput
       };
 
       // Call the Azure Function endpoint
