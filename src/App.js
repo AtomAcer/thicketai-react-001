@@ -115,7 +115,7 @@ function App() {
       );
 
       // Extract the answer from the response
-      const answer = response.data?.answer || 'No response received.';
+      const answer = response.data?.response || 'No response received.';
 
       // Update the conversation history with the assistant's response
       setConversationHistory(prev => [
