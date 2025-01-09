@@ -159,6 +159,7 @@ function App() {
   const sendToAzureFunction = async (audioBlob, fileName) => {
     const formData = new FormData();
     formData.append('audio', audioBlob, fileName); // Use the correct file name and extension
+    console.log('formData:', formData);
 
     try {
       const response = await fetch('https://fn-thicketai-dev-001.azurewebsites.net/api/SpeechToText', {
