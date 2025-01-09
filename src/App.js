@@ -114,7 +114,7 @@ function App() {
         audioChunksRef.current = [];
 
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorderRef.current = new MediaRecorder(stream);
+        mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
 
         mediaRecorderRef.current.ondataavailable = (event) => {
           if (event.data.size > 0) {
@@ -126,15 +126,11 @@ function App() {
         };
 
         mediaRecorderRef.current.onstop = async () => {
-          const mimeType = mediaRecorderRef.current.mimeType || 'audio/webm';
-          const blob = new Blob(audioChunksRef.current, { type: mimeType });
+          const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
           console.log('Recording stopped. Blob created:', blob);
 
-          // Update state
-          setAudioBlob(blob);
-
-          // Send the blob with the correct file extension
-          await sendToAzureFunction(blob, mimeType === 'audio/webm' ? 'recording.webm' : 'recording.wav');
+          // Send the audio blob to Azure Function
+          await sendToAzureFunction(blob, 'recording.webm');
         };
 
         mediaRecorderRef.current.onerror = (event) => {
@@ -155,6 +151,7 @@ function App() {
       console.log('Recording stopped');
     }
   };
+
 
   const sendToAzureFunction = async (audioBlob, fileName) => {
     const formData = new FormData();
