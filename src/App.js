@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { BlobServiceClient } from "@azure/storage-blob";
 import { Buffer } from 'buffer';
 import axios from 'axios';
@@ -16,6 +16,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showOverlay, setShowOverlay] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState(null);
   const [historicalConversations, setHistoricalConversations] = useState([
     { id: 1, name: "John Doe", summary: "Discussed project scope and responsibilities." },
     { id: 2, name: "Jane Smith", summary: "Recapped client feedback and contract terms." },
