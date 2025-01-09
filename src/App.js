@@ -16,7 +16,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [showOverlay, setShowOverlay] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
-  // const [audioBlob, setAudioBlob] = useState(null);
+  const [audioBlob, setAudioBlob] = useState(null);
   const [historicalConversations, setHistoricalConversations] = useState([
     { id: 1, name: "John Doe", summary: "Discussed project scope and responsibilities." },
     { id: 2, name: "Jane Smith", summary: "Recapped client feedback and contract terms." },
@@ -107,7 +107,6 @@ function App() {
   //     console.log('Recording stopped');
   //   }
   // };
-
   const toggleRecording = async () => {
     if (!isRecording) {
       try {
@@ -131,7 +130,10 @@ function App() {
           const blob = new Blob(audioChunksRef.current, { type: mimeType });
           console.log('Recording stopped. Blob created:', blob);
 
-          // Send the audio blob to Azure Function
+          // Update the state with the new audio blob
+          setAudioBlob(blob);
+
+          // Optionally send the blob to Azure Function
           await sendToAzureFunction(blob);
         };
 
@@ -174,6 +176,7 @@ function App() {
       console.error('Error during transcription:', error);
     }
   };
+
 
   const playAudio = () => {
     if (audioBlob) {
