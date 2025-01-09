@@ -129,6 +129,9 @@ function App() {
           const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
           console.log('Recording stopped. Blob created:', blob);
 
+          // Update the audioBlob state
+          setAudioBlob(blob);
+
           // Send the audio blob to Azure Function
           await sendToAzureFunction(blob, 'recording.webm');
         };
