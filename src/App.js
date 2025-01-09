@@ -71,31 +71,47 @@ function App() {
   const toggleRecording = async () => {
     if (!isRecording) {
       try {
+        // Reset audio chunks
+        audioChunksRef.current = [];
+
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorderRef.current = new MediaRecorder(stream);
 
         mediaRecorderRef.current.ondataavailable = (event) => {
           if (event.data.size > 0) {
             audioChunksRef.current.push(event.data);
+            console.log('Data chunk received:', event.data);
+          } else {
+            console.log('Empty data chunk');
           }
         };
 
         mediaRecorderRef.current.onstop = () => {
-          const blob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+          const mimeType = mediaRecorderRef.current.mimeType || 'audio/webm';
+          const blob = new Blob(audioChunksRef.current, { type: mimeType });
+          console.log('Recording stopped. Blob created:', blob);
           setAudioBlob(blob);
-          audioChunksRef.current = [];
+        };
+
+        mediaRecorderRef.current.onerror = (event) => {
+          console.error('MediaRecorder error:', event.error);
         };
 
         mediaRecorderRef.current.start();
         setIsRecording(true);
+        console.log('Recording started');
       } catch (error) {
-        console.error("Error accessing microphone:", error);
+        console.error('Error accessing microphone:', error);
       }
     } else {
       mediaRecorderRef.current.stop();
+      // Stop all media tracks
+      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
       setIsRecording(false);
+      console.log('Recording stopped');
     }
   };
+
 
   const playAudio = () => {
     if (audioBlob) {
