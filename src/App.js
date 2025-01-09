@@ -64,8 +64,48 @@ function App() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  // const toggleRecording = () => {
-  //   setIsRecording(!isRecording);
+  // const toggleRecording_old = async () => {
+  //   if (!isRecording) {
+  //     try {
+  //       // Reset audio chunks
+  //       audioChunksRef.current = [];
+
+  //       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  //       mediaRecorderRef.current = new MediaRecorder(stream);
+
+  //       mediaRecorderRef.current.ondataavailable = (event) => {
+  //         if (event.data.size > 0) {
+  //           audioChunksRef.current.push(event.data);
+  //           console.log('Data chunk received:', event.data);
+  //         } else {
+  //           console.log('Empty data chunk');
+  //         }
+  //       };
+
+  //       mediaRecorderRef.current.onstop = () => {
+  //         const mimeType = mediaRecorderRef.current.mimeType || 'audio/webm';
+  //         const blob = new Blob(audioChunksRef.current, { type: mimeType });
+  //         console.log('Recording stopped. Blob created:', blob);
+  //         setAudioBlob(blob);
+  //       };
+
+  //       mediaRecorderRef.current.onerror = (event) => {
+  //         console.error('MediaRecorder error:', event.error);
+  //       };
+
+  //       mediaRecorderRef.current.start();
+  //       setIsRecording(true);
+  //       console.log('Recording started');
+  //     } catch (error) {
+  //       console.error('Error accessing microphone:', error);
+  //     }
+  //   } else {
+  //     mediaRecorderRef.current.stop();
+  //     // Stop all media tracks
+  //     mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
+  //     setIsRecording(false);
+  //     console.log('Recording stopped');
+  //   }
   // };
 
   const toggleRecording = async () => {
@@ -86,11 +126,13 @@ function App() {
           }
         };
 
-        mediaRecorderRef.current.onstop = () => {
+        mediaRecorderRef.current.onstop = async () => {
           const mimeType = mediaRecorderRef.current.mimeType || 'audio/webm';
           const blob = new Blob(audioChunksRef.current, { type: mimeType });
           console.log('Recording stopped. Blob created:', blob);
-          setAudioBlob(blob);
+
+          // Send the audio blob to Azure Function
+          await sendToAzureFunction(blob);
         };
 
         mediaRecorderRef.current.onerror = (event) => {
@@ -112,6 +154,26 @@ function App() {
     }
   };
 
+  const sendToAzureFunction = async (audioBlob) => {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'recording.wav');
+
+    try {
+      const response = await fetch('https://fn-thicketai-dev-001.azurewebsites.net/api/SpeechToText', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send audio to Azure Function');
+      }
+
+      const transcription = await response.text();
+      console.log('Transcription:', transcription);
+    } catch (error) {
+      console.error('Error during transcription:', error);
+    }
+  };
 
   const playAudio = () => {
     if (audioBlob) {
