@@ -158,7 +158,7 @@ function App() {
 
   const sendToAzureFunction = async (audioBlob) => {
     const formData = new FormData();
-    formData.append('audio', audioBlob, 'recording.wav');
+    formData.append('audio', audioBlob, 'recording.webm');
 
     try {
       const response = await fetch('https://fn-thicketai-dev-001.azurewebsites.net/api/SpeechToText', {
