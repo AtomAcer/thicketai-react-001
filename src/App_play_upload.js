@@ -26,12 +26,6 @@ function App() {
 
   console.log("Environment Variables:", process.env);
 
-  React.useEffect(() => {
-    if (audioBlob) {
-      console.log('Audio blob available:', audioBlob);
-    }
-  }, [audioBlob]);
-
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
@@ -70,6 +64,50 @@ function App() {
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+
+  // const toggleRecording_old = async () => {
+  //   if (!isRecording) {
+  //     try {
+  //       // Reset audio chunks
+  //       audioChunksRef.current = [];
+
+  //       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  //       mediaRecorderRef.current = new MediaRecorder(stream);
+
+  //       mediaRecorderRef.current.ondataavailable = (event) => {
+  //         if (event.data.size > 0) {
+  //           audioChunksRef.current.push(event.data);
+  //           console.log('Data chunk received:', event.data);
+  //         } else {
+  //           console.log('Empty data chunk');
+  //         }
+  //       };
+
+  //       mediaRecorderRef.current.onstop = () => {
+  //         const mimeType = mediaRecorderRef.current.mimeType || 'audio/webm';
+  //         const blob = new Blob(audioChunksRef.current, { type: mimeType });
+  //         console.log('Recording stopped. Blob created:', blob);
+  //         setAudioBlob(blob);
+  //       };
+
+  //       mediaRecorderRef.current.onerror = (event) => {
+  //         console.error('MediaRecorder error:', event.error);
+  //       };
+
+  //       mediaRecorderRef.current.start();
+  //       setIsRecording(true);
+  //       console.log('Recording started');
+  //     } catch (error) {
+  //       console.error('Error accessing microphone:', error);
+  //     }
+  //   } else {
+  //     mediaRecorderRef.current.stop();
+  //     // Stop all media tracks
+  //     mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
+  //     setIsRecording(false);
+  //     console.log('Recording stopped');
+  //   }
+  // };
 
   const handlerecordClick = () => {
     setIsRecording(!isRecording); // Toggle recording state
@@ -168,6 +206,40 @@ function App() {
     }
   };
 
+
+  // const playAudio = () => {
+  //   if (audioBlob) {
+  //     const audioUrl = URL.createObjectURL(audioBlob);
+  //     const audio = new Audio(audioUrl);
+  //     audio.play();
+  //   }
+  // };
+
+  // const uploadAudio = async () => {
+  //   if (!audioBlob) return;
+
+  //   try {
+  //     const response = await axios.get('/api/GetStorageConfig');
+  //     const { sasToken, containerUrl } = response.data;
+
+  //     if (!sasToken || !containerUrl) {
+  //       throw new Error("Failed to retrieve SAS token or container URL.");
+  //     }
+
+  //     const blobServiceClient = new BlobServiceClient(`${containerUrl}?${sasToken}`);
+  //     const containerClient = blobServiceClient.getContainerClient();
+  //     const blobClient = containerClient.getBlockBlobClient(`recording-${Date.now()}.wav`);
+
+  //     await blobClient.uploadData(audioBlob, {
+  //       blobHTTPHeaders: { blobContentType: 'audio/wav' },
+  //     });
+
+  //     console.log("Audio uploaded successfully");
+  //   } catch (error) {
+  //     console.error("Error uploading audio:", error);
+  //   }
+  // };
+
   const handleKeyEnter = (event) => {
     if (event.key === 'Enter') {
       // Call your function here
@@ -236,6 +308,25 @@ function App() {
     }
   };
 
+
+
+  // const handleFileChange = async (event) => {
+  //   const file = event.target.files[0];
+  //   if (!file) return;
+  //   setFileInput(file);
+  //   setShowOverlay(false);
+
+  //   const formData = new FormData();
+  //   formData.append("file", file);
+
+  //   try {
+  //     await axios.post("http://localhost:5001/api/process-document", formData);
+  //     console.log("Document processed successfully");
+  //   } catch (error) {
+  //     console.error("Error processing document:", error);
+  //   }
+  // };
+
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -271,6 +362,17 @@ function App() {
     const botMessage = { role: 'Bot', text: answer, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
     setConversationHistory(prev => [...prev, botMessage]);
   };
+
+  // const generateVoiceOutput = async (text) => {
+  //   try {
+  //     const response = await axios.post("http://localhost:5001/api/generate-speech", { text, voice: voiceKey });
+  //     const audioBlob = new Blob([response.data], { type: 'audio/wav' });
+  //     const audioUrl = URL.createObjectURL(audioBlob);
+  //     new Audio(audioUrl).play();
+  //   } catch (error) {
+  //     console.error("Error generating speech:", error);
+  //   }
+  // };
 
   const formatPrompt = (history, input) => {
     let prompt = "You are a helpful assistant.\n";
