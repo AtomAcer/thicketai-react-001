@@ -172,19 +172,29 @@ function App() {
     }
 
     try {
-      const response = await fetch('https://fn-thicketai-dev-001.azurewebsites.net/api/SpeechToText', {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await axios.post(
+        'https://fn-thicketai-dev-001.azurewebsites.net/api/SpeechToText',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data', // Set the content type to multipart/form-data
+          },
+        }
+      );
 
-      if (!response.ok) {
-        throw new Error('Failed to send audio to Azure Function');
-      }
-
-      const transcription = await response.text();
-      console.log('Transcription:', transcription);
+      console.log('Transcription:', response.data);
     } catch (error) {
-      console.error('Error during transcription:', error);
+      if (error.response) {
+        // Server responded with a status code outside the 2xx range
+        console.error('Error response:', error.response.data);
+        console.error('Status code:', error.response.status);
+      } else if (error.request) {
+        // Request was made but no response was received
+        console.error('No response received:', error.request);
+      } else {
+        // Something happened while setting up the request
+        console.error('Error setting up request:', error.message);
+      }
     }
   };
 
