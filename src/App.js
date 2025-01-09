@@ -24,6 +24,9 @@ function App() {
 
   console.log("Environment Variables:", process.env);
 
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+
   const generateVoiceOutput = useCallback(async (text) => {
     try {
       const response = await axios.post("http://localhost:5001/api/generate-speech", { text, voice: voiceKey });
@@ -60,8 +63,70 @@ function App() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  const toggleRecording = () => {
-    setIsRecording(!isRecording);
+  // const toggleRecording = () => {
+  //   setIsRecording(!isRecording);
+  // };
+
+  const toggleRecording = async () => {
+    if (!isRecording) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorderRef.current = new MediaRecorder(stream);
+
+        mediaRecorderRef.current.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+          }
+        };
+
+        mediaRecorderRef.current.onstop = () => {
+          const blob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+          setAudioBlob(blob);
+          audioChunksRef.current = [];
+        };
+
+        mediaRecorderRef.current.start();
+        setIsRecording(true);
+      } catch (error) {
+        console.error("Error accessing microphone:", error);
+      }
+    } else {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const playAudio = () => {
+    if (audioBlob) {
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audio.play();
+    }
+  };
+
+  const uploadAudio = async () => {
+    if (!audioBlob) return;
+
+    try {
+      const response = await axios.get('/api/GetStorageConfig');
+      const { sasToken, containerUrl } = response.data;
+
+      if (!sasToken || !containerUrl) {
+        throw new Error("Failed to retrieve SAS token or container URL.");
+      }
+
+      const blobServiceClient = new BlobServiceClient(`${containerUrl}?${sasToken}`);
+      const containerClient = blobServiceClient.getContainerClient();
+      const blobClient = containerClient.getBlockBlobClient(`recording-${Date.now()}.wav`);
+
+      await blobClient.uploadData(audioBlob, {
+        blobHTTPHeaders: { blobContentType: 'audio/wav' },
+      });
+
+      console.log("Audio uploaded successfully");
+    } catch (error) {
+      console.error("Error uploading audio:", error);
+    }
   };
 
   const handleKeyEnter = (event) => {
@@ -310,13 +375,14 @@ function App() {
               />
               <label htmlFor="file-upload" className="upload-button">📎</label>
               <button onClick={handleTextSubmit} className="submit-button">Submit</button>
-              <div className="recorder-container">
-                <button onClick={toggleRecording} className="microphone-button">
-                  {isRecording ? 'Stop' : 'Start'} Recording
+              <div className="recorder-section">
+                <button onClick={toggleRecording}>
+                  {isRecording ? 'Stop Recording' : 'Start Recording'}
                 </button>
-                {isRecording && (
-                  <div className="recording-placeholder">
-                    Recording functionality is temporarily disabled.
+                {audioBlob && (
+                  <div>
+                    <button onClick={playAudio}>Play Recording</button>
+                    <button onClick={uploadAudio}>Upload Recording</button>
                   </div>
                 )}
               </div>
