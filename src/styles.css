@@ -353,8 +353,9 @@
 }
 
 .submit-button {
-    padding: 10px 15px;
+    padding: 7px 10px;
     background-color: #505a96;
+    font-size: 0.9rem;
     color: white;
     border: none;
     border-radius: 20px;
@@ -374,4 +375,5 @@
     display: inline-flex;
     justify-content: center;
     align-items: center;
+    margin-left: 40px;
 }

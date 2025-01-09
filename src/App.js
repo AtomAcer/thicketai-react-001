@@ -368,6 +368,13 @@ function App() {
               ))}
             </div>
             <div className="input-section">
+              <label htmlFor="file-upload" className="upload-button">📎</label>
+              <input
+                type="file"
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+                id="file-upload"
+              />
               <input
                 type="text"
                 value={textInput}
@@ -376,19 +383,12 @@ function App() {
                 className="text-input"
                 onKeyDown={handleKeyEnter}
               />
-              <input
-                type="file"
-                onChange={handleFileChange}
-                style={{ display: 'none' }}
-                id="file-upload"
-              />
-              <label htmlFor="file-upload" className="upload-button">📎</label>
               <button onClick={handleTextSubmit} className="submit-button">Submit</button>
               <div className="recorder-section">
                 <FaMicrophone
                   onClick={handlerecordClick}
                   style={{
-                    fontSize: '2rem',
+                    fontSize: '1.5rem',
                     color: isRecording ? 'red' : 'black',
                     cursor: 'pointer',
                   }}
