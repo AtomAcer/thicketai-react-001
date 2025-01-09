@@ -130,11 +130,11 @@ function App() {
           const blob = new Blob(audioChunksRef.current, { type: mimeType });
           console.log('Recording stopped. Blob created:', blob);
 
-          // Update the state with the new audio blob
+          // Update state
           setAudioBlob(blob);
 
-          // Optionally send the blob to Azure Function
-          await sendToAzureFunction(blob);
+          // Send the blob with the correct file extension
+          await sendToAzureFunction(blob, mimeType === 'audio/webm' ? 'recording.webm' : 'recording.wav');
         };
 
         mediaRecorderRef.current.onerror = (event) => {
@@ -156,9 +156,9 @@ function App() {
     }
   };
 
-  const sendToAzureFunction = async (audioBlob) => {
+  const sendToAzureFunction = async (audioBlob, fileName) => {
     const formData = new FormData();
-    formData.append('audio', audioBlob, 'recording.webm');
+    formData.append('audio', audioBlob, fileName); // Use the correct file name and extension
 
     try {
       const response = await fetch('https://fn-thicketai-dev-001.azurewebsites.net/api/SpeechToText', {
