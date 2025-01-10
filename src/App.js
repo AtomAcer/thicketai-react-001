@@ -4,6 +4,7 @@ import { BlobServiceClient } from "@azure/storage-blob";
 import { Buffer } from 'buffer';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import './styles.css';
 
 // Make Buffer globally available
@@ -363,7 +364,7 @@ function App() {
                   </span>
                   <div className="message-text">
                     {entry.role === 'bot' ? (
-                      <ReactMarkdown>{entry.text}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{entry.text}</ReactMarkdown>
                     ) : (
                       entry.text
                     )}

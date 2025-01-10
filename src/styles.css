@@ -169,6 +169,30 @@
     margin-left: 0;
 }
 
+.message-text {
+    margin-top: 8px;
+    line-height: 1.5;
+}
+
+.message-text h1,
+.message-text h2,
+.message-text h3 {
+    margin: 8px 0;
+}
+
+.message-text p {
+    margin: 4px 0;
+}
+
+.message-text ul {
+    padding-left: 20px;
+    margin: 8px 0;
+}
+
+.message-text strong {
+    font-weight: bold;
+}
+
 /* Header */
 .header {
     display: flex;
