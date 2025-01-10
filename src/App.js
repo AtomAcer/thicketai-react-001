@@ -182,21 +182,79 @@ function App() {
     }
   };
 
+  // const handleTextSubmit = async () => {
+  //   setShowOverlay(false);
+  //   if (!textInput.trim()) return;
+
+  //   const FUNCTION_KEY = process.env.REACT_APP_LLM_RESPONSE_FN_KEY;
+  //   console.log("FUNCTION_KEY:", FUNCTION_KEY);
+
+  //   // const AZURE_FUNCTION_URL = `https://fn-thicketai-dev-001.azurewebsites.net/api/GetLLMResponse?code=${FUNCTION_KEY}`;
+
+  //   const AZURE_FUNCTION_URL = `https://fn-thicketai-dev-001.azurewebsites.net/api/GetLLMResponse`;
+
+
+  //   const userMessage = {
+  //     role: 'user',
+  //     text: textInput,
+  //     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  //   };
+  //   const updatedHistory = [...conversationHistory, userMessage];
+
+  //   setConversationHistory(updatedHistory);
+  //   setTextInput('');
+
+  //   try {
+  //     const payload = {
+  //       question: textInput,
+  //       history: updatedHistory.map(msg => ({
+  //         role: msg.role,
+  //         content: msg.text,
+  //       })),
+  //     };
+
+  //     console.log("Payload sent to Azure Function:", payload);
+
+  //     const response = await axios.post(
+  //       AZURE_FUNCTION_URL,
+  //       payload,
+  //       {
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //         },
+  //       }
+  //     );
+
+  //     console.log("Response from Azure Function:", response.data);
+
+  //     const answer = response.data?.response || 'No response received.';
+
+  //     setConversationHistory(prev => [
+  //       ...prev,
+  //       { role: 'assistant', text: answer },
+  //     ]);
+  //   } catch (error) {
+  //     console.error("Error:", error.response?.data || error.message);
+  //     setConversationHistory(prev => [
+  //       ...prev,
+  //       { role: 'assistant', text: 'An error occurred while processing your request. Please try again.' },
+  //     ]);
+  //   }
+  // };
+
   const handleTextSubmit = async () => {
+    setShowOverlay(false);
     if (!textInput.trim()) return;
 
     const FUNCTION_KEY = process.env.REACT_APP_LLM_RESPONSE_FN_KEY;
     console.log("FUNCTION_KEY:", FUNCTION_KEY);
 
-    // const AZURE_FUNCTION_URL = `https://fn-thicketai-dev-001.azurewebsites.net/api/GetLLMResponse?code=${FUNCTION_KEY}`;
-
     const AZURE_FUNCTION_URL = `https://fn-thicketai-dev-001.azurewebsites.net/api/GetLLMResponse`;
-
 
     const userMessage = {
       role: 'user',
       text: textInput,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
     const updatedHistory = [...conversationHistory, userMessage];
 
@@ -214,24 +272,41 @@ function App() {
 
       console.log("Payload sent to Azure Function:", payload);
 
-      const response = await axios.post(
-        AZURE_FUNCTION_URL,
-        payload,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      // Fetch the LLM response
+      const response = await axios.post(AZURE_FUNCTION_URL, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
       console.log("Response from Azure Function:", response.data);
 
       const answer = response.data?.response || 'No response received.';
-
-      setConversationHistory(prev => [
-        ...prev,
+      const updatedConversation = [
+        ...updatedHistory,
         { role: 'assistant', text: answer },
-      ]);
+      ];
+      setConversationHistory(updatedConversation);
+
+      // Placeholder: Call Azure TTS Function for the text-to-speech conversion
+      const TTS_FUNCTION_URL = `https://fn-thicketai-dev-001.azurewebsites.net/api/TextToSpeech`;
+      const ttsPayload = { text: answer };
+
+      const ttsResponse = await axios.post(TTS_FUNCTION_URL, ttsPayload, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log("TTS Response:", ttsResponse);
+
+      const audioBlob = new Blob([ttsResponse.data.audio], { type: 'audio/mpeg' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      // Play the audio response
+      const audio = new Audio(audioUrl);
+      audio.play();
+
     } catch (error) {
       console.error("Error:", error.response?.data || error.message);
       setConversationHistory(prev => [
@@ -240,6 +315,7 @@ function App() {
       ]);
     }
   };
+
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
