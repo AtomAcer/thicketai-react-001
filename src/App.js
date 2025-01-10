@@ -3,6 +3,7 @@ import { FaMicrophone } from 'react-icons/fa'; // Import a microphone icon from 
 import { BlobServiceClient } from "@azure/storage-blob";
 import { Buffer } from 'buffer';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
 import './styles.css';
 
 // Make Buffer globally available
@@ -361,7 +362,11 @@ function App() {
                     <strong>{entry.role}</strong> <span className="timestamp">{entry.timestamp}</span>
                   </span>
                   <div className="message-text">
-                    {entry.text}
+                    {entry.role === 'bot' ? (
+                      <ReactMarkdown>{entry.text}</ReactMarkdown>
+                    ) : (
+                      entry.text
+                    )}
                   </div>
                 </div>
               ))}
