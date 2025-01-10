@@ -390,7 +390,7 @@ function App() {
     <div className="app-container">
       <div className="top-ribbon">
         <div className="sidebar-icon" onClick={toggleSidebar}>💬</div>
-        <h1>Cross Examination</h1>
+        <h1>First 30: App Demo</h1>
       </div>
 
       <div className={`sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
@@ -438,7 +438,7 @@ function App() {
           <div className="center-overlay">
             <div className="upload-box">
               <span className="upload-icon">📄</span>
-              <p className="upload-text">Upload Deposition</p>
+              <p className="upload-text">Upload Document</p>
               <button className="upload-btn" onClick={() => document.getElementById("file-upload").click()}>Upload</button>
             </div>
             <div className="existing-box">
@@ -449,8 +449,8 @@ function App() {
                 value={selectedDeposition}
                 onChange={(e) => setSelectedDeposition(e.target.value)}
               >
-                <option value="">Select Deposition</option>
-                {['Deposition 1', 'Deposition 2', 'Deposition 3'].map((option, index) => (
+                <option value="">Select Document Group</option>
+                {['HR Onboarding Documents'].map((option, index) => (
                   <option key={index} value={option}>{option}</option>
                 ))}
               </select>
