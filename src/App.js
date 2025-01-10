@@ -4,7 +4,6 @@ import { BlobServiceClient } from "@azure/storage-blob";
 import { Buffer } from 'buffer';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import './styles.css';
