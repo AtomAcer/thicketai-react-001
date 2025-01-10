@@ -5,6 +5,8 @@ import { Buffer } from 'buffer';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import './styles.css';
 
 // Make Buffer globally available
@@ -271,6 +273,33 @@ function App() {
     }
   };
 
+  const MarkdownWithHighlighting = ({ text }) => (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        code({ node, inline, className, children, ...props }) {
+          const match = /language-(\w+)/.exec(className || '');
+          return !inline && match ? (
+            <SyntaxHighlighter
+              style={tomorrow}
+              language={match[1]}
+              PreTag="div"
+              {...props}
+            >
+              {String(children).replace(/\n$/, '')}
+            </SyntaxHighlighter>
+          ) : (
+            <code className={className} {...props}>
+              {children}
+            </code>
+          );
+        },
+      }}
+    >
+      {text}
+    </ReactMarkdown>
+  );
+
   const handleResponse = (answer) => {
     const botMessage = { role: 'Bot', text: answer, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
     setConversationHistory(prev => [...prev, botMessage]);
@@ -364,14 +393,14 @@ function App() {
                   </span>
                   <div className="message-text">
                     {entry.role === 'bot' ? (
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{String(entry.text)}</ReactMarkdown>
+                      <MarkdownWithHighlighting text={entry.text} />
                     ) : (
                       entry.text
                     )}
                   </div>
                 </div>
               ))}
-            </div>
+            </div>;
             <div className="input-section">
               <label htmlFor="file-upload" className="upload-button">📎</label>
               <input
