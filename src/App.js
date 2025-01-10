@@ -154,7 +154,7 @@ function App() {
 
       console.log('Transcription:', response.data);
       // Set the transcription text to the input field
-      setTextInput(transcription);
+      setTextInput(response.data);
     } catch (error) {
       if (error.response) {
         // Server responded with a status code outside the 2xx range
