@@ -293,17 +293,15 @@ function App() {
       const ttsPayload = { text: answer };
 
       const ttsResponse = await axios.post(TTS_FUNCTION_URL, ttsPayload, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        responseType: 'blob', // Ensure response is treated as binary data
       });
 
       console.log("TTS Response:", ttsResponse);
 
-      const audioBlob = new Blob([ttsResponse.data.audio], { type: 'audio/mpeg' });
+      const audioBlob = ttsResponse.data; // Already a Blob object
       const audioUrl = URL.createObjectURL(audioBlob);
 
-      // Play the audio response
       const audio = new Audio(audioUrl);
       audio.play();
 
