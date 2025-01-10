@@ -273,32 +273,33 @@ function App() {
     }
   };
 
-  const MarkdownWithHighlighting = ({ text }) => (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      components={{
-        code({ node, inline, className, children, ...props }) {
-          const match = /language-(\w+)/.exec(className || '');
-          return !inline && match ? (
-            <SyntaxHighlighter
-              style={tomorrow}
-              language={match[1]}
-              PreTag="div"
-              {...props}
-            >
-              {String(children).replace(/\n$/, '')}
-            </SyntaxHighlighter>
-          ) : (
-            <code className={className} {...props}>
-              {children}
-            </code>
-          );
-        },
-      }}
-    >
-      {text}
-    </ReactMarkdown>
-  );
+  const MarkdownRenderer = ({ markdown }) => {
+    return (
+      <ReactMarkdown
+        components={{
+          code({ node, inline, className, children, ...props }) {
+            const match = /language-(\w+)/.exec(className || '');
+            return !inline && match ? (
+              <SyntaxHighlighter
+                {...props}
+                style={tomorrow}
+                language={match[1]}
+                PreTag="div"
+              >
+                {String(children).replace(/\n$/, '')}
+              </SyntaxHighlighter>
+            ) : (
+              <code className={className} {...props}>
+                {children}
+              </code>
+            );
+          }
+        }}
+      >
+        {markdown}
+      </ReactMarkdown>
+    );
+  };
 
   const handleResponse = (answer) => {
     const botMessage = { role: 'Bot', text: answer, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
@@ -393,14 +394,14 @@ function App() {
                   </span>
                   <div className="message-text">
                     {entry.role === 'bot' ? (
-                      <MarkdownWithHighlighting text={entry.text} />
+                      <MarkdownRenderer markdown={entry.text} />
                     ) : (
                       entry.text
                     )}
                   </div>
                 </div>
               ))}
-            </div>;
+            </div>
             <div className="input-section">
               <label htmlFor="file-upload" className="upload-button">📎</label>
               <input
