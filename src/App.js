@@ -364,7 +364,7 @@ function App() {
                   </span>
                   <div className="message-text">
                     {entry.role === 'bot' ? (
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{entry.text}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{String(entry.text)}</ReactMarkdown>
                     ) : (
                       entry.text
                     )}
