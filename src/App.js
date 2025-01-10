@@ -311,7 +311,6 @@ function App() {
           <div className="footer-item">Settings</div>
         </div>
       </div>
-
       <div className="main-content">
         <header className="header">
           <div className="voice-select-container">
@@ -330,7 +329,6 @@ function App() {
             </select>
           </div>
         </header>
-
         {showOverlay && (
           <div className="center-overlay">
             <div className="upload-box">
@@ -354,7 +352,6 @@ function App() {
             </div>
           </div>
         )}
-
         <div className="chat-container">
           <div className="chat-area">
             <div className="conversation">
@@ -377,20 +374,25 @@ function App() {
                 style={{ display: 'none' }}
                 id="file-upload"
               />
-              <input
-                type="text"
+              <textarea
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
                 placeholder="Enter your message"
-                className="text-input"
+                className="text-input auto-resize"
                 onKeyDown={handleKeyEnter}
               />
+              <div
+                className="textarea-clone"
+                aria-hidden="true"
+              >
+                {textInput + "\n"}
+              </div>
               <button onClick={handleTextSubmit} className="submit-button">Submit</button>
               <div className="recorder-section">
                 <FaMicrophone
                   onClick={handlerecordClick}
                   style={{
-                    fontSize: '1.5rem',
+                    fontSize: '2rem',
                     color: isRecording ? 'red' : 'black',
                     cursor: 'pointer',
                   }}

@@ -330,16 +330,36 @@
     box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05);
 }
 
+/* Styles for the main textarea */
 .text-input {
-    flex-grow: 1;
-    padding: 12px 15px;
-    border: 1px solid #ddd;
-    border-radius: 20px;
-    font-size: 14px;
-    outline: none;
-    background-color: #f9f9f9;
-    transition: border-color 0.2s;
-    margin-right: 10px;
+    width: 100%;
+    min-height: 40px;
+    font-size: 16px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    resize: none;
+    overflow: hidden;
+}
+
+/* Hidden clone element for measuring content size */
+.textarea-clone {
+    visibility: hidden;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    position: absolute;
+    z-index: -1;
+    width: calc(100% - 20px);
+    /* Match the textarea's width minus padding */
+    font-size: 16px;
+    /* Match font size */
+    line-height: 1.5;
+    /* Match line height */
+    padding: 10px;
+    /* Match padding */
+    box-sizing: border-box;
+    /* Match box-sizing */
 }
 
 .text-input:focus {
@@ -353,8 +373,9 @@
 }
 
 .submit-button {
-    padding: 7px 10px;
+    padding: 10px 15px;
     background-color: #505a96;
+    margin-left: 5px;
     font-size: 0.9rem;
     color: white;
     border: none;
