@@ -347,6 +347,9 @@ function App() {
   };
 
   const MarkdownRenderer = ({ markdown }) => {
+    if (!markdown) {
+      return <div>No content to display</div>;
+    }
     return (
       <ReactMarkdown
         components={{
@@ -366,7 +369,7 @@ function App() {
                 {children}
               </code>
             );
-          }
+          },
         }}
       >
         {markdown}
@@ -461,13 +464,14 @@ function App() {
           <div className="chat-area">
             <div className="conversation">
               {conversationHistory.map((entry, index) => (
-                <div key={index} className={`message ${entry.role === 'You' ? 'user' : 'bot'}`}>
+                <div key={index} className={`message ${entry.role === 'user' ? 'user' : 'assistant'}`}>
                   <span className="message-info">
-                    <strong>{entry.role}</strong> <span className="timestamp">{entry.timestamp}</span>
+                    <strong>{entry.role === 'user' ? 'You' : 'Bot'}</strong>
+                    <span className="timestamp">{entry.timestamp}</span>
                   </span>
                   <div className="message-text">
-                    {entry.role === 'bot' ? (
-                      <MarkdownRenderer markdown={entry.text} />
+                    {entry.role === 'assistant' ? (
+                      <MarkdownRenderer markdown={entry.text || 'No response provided.'} />
                     ) : (
                       entry.text
                     )}
